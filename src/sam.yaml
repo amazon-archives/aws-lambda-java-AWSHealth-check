@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  DEFAULTREGION:
+    Type: String
+    Description: "Region for running the solution"
+  CONFIGFILE:
+    Type: String
+    Description: "Configuration file name "
+  BUCKET:
+    Type: String
+    Description: "S3 Bucket to store the AWSHealth.describeevents() resultset history and SHA256 fingerprint"
+
+Resources:
+  AWSHealthChecking:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSHealthCheckingLambda
+      Description: "Function for checking new AWSHealth events"
+      MemorySize: 256
+      Timeout: 60
+      Handler: AWSHealthCheck.Lambda::handleRequest
+      Runtime: java8
+      CodeUri: ../bin/AWSHealthCheck-1.0-SNAPSHOT.jar
+      Role: !GetAtt AWSHealthCheckingLambdaIAMRole.Arn
+      Environment:
+        Variables:
+          DEFAULT_REGION: !Ref DEFAULTREGION
+          CONFIG_FILE: !Ref CONFIGFILE
+          BUCKET: !Ref BUCKET
+      Events:
+        DailyEvent: # Run every 5 min
+          Properties:
+            Schedule: cron(*/5 * * * ? *)
+          Type: Schedule
+
+  AWSHealthCheckingLambdaIAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+        Path: "/"
+        ManagedPolicyArns: #This policy is for Lambda invoke / logging
+          - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies: 
+          - 
+            PolicyName: "root"
+            PolicyDocument: 
+              Version: "2012-10-17"
+              Statement:
+                -  #Policy to allow Organizations account description
+                  Effect: "Allow"
+                  Action:
+                    - organizations:DescribeAccount
+                  Resource: "*"
+                - #Policy to allow SES sending
+                  Effect: "Allow"
+                  Action:
+                    - ses:SendEmail
+                    - ses:SendRawEmail
+                  Resource: "*"
+                - #Policy to allow reading and storing S3 file
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:GetObjectAcl
+                    - s3:PutObject
+                    - s3:PutObjectAcl
+                    - s3:ListBucket
+                  Resource: !Sub arn:aws:s3:::${BUCKET}/*
+                - #Policy to allow reading and storing S3 file
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:GetObjectAcl
+                    - s3:PutObject
+                    - s3:PutObjectAcl
+                    - s3:ListBucket
+                  Resource: !Sub arn:aws:s3:::${BUCKET}
+                - #Policy to allow CloudWatch
+                  Effect: "Allow"
+                  Action:
+                    - cloudwatch:*
+                  Resource: "*"
+                - #Policy to allow AWS Health
+                  Effect: "Allow"
+                  Action:
+                    - health:*
+                  Resource: "*"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Sid: "AllowLambdaServiceToAssumeRole"
+              Effect: "Allow"
+              Action: 
+                - "sts:AssumeRole"
+              Principal:
+                Service: 
+                  - "lambda.amazonaws.com"
+  
