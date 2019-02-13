@@ -1,6 +1,6 @@
 #!/bin/bash
 #Suggest deploying to us-east-1 due to SES
-export DEFAULT_REGION=us-east-1
+export AWS_DEFAULT_REGION=us-east-1
 #Change the below, an s3 bucket to store lambda code for deploy
 #Must be in same region as lambda (ie DEFAULT_REGION)
 export CONFIG_BUCKET=changeme
