@@ -53,7 +53,7 @@ And then run deploy.sh
 3. Upload to console from AWSHealthCheck-1.0-SNAPSHOT.jar produced by running 'build.sh'.
 4. Update ENV Variables in Lambda console  
    CONFIG_FILE: Configuration file name  
-   DEFAULT_REGION: Bucket Region
+   DEFAULT_REGION: Bucket Region  
    BUCKET: Bucket for storing previous AWS Health API call history and SHA256 fingerprint.
 5. Create a trigger (CloudWatch Event)
 
