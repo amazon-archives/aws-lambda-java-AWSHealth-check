@@ -22,4 +22,4 @@ aws cloudformation deploy \
   --template-file deploy.sam.yaml \
   --stack-name automate-lambda-java-AWSHealth-check-build  \
   --capabilities CAPABILITY_IAM \
-  --parameter-overrides AWSDEFAULTREGION=$AWS_DEFAULT_REGION CONFIGFILE=$CONFIG_FILE BUCKET=$BUCKET
+  --parameter-overrides DEFAULTREGION=$AWS_DEFAULT_REGION CONFIGFILE=$CONFIG_FILE BUCKET=$BUCKET

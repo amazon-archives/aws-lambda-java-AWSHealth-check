@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Parameters:
-  AWSDEFAULTREGION:
+  DEFAULTREGION:
     Type: String
     Description: "Region for running the solution"
   CONFIGFILE:
@@ -25,7 +25,7 @@ Resources:
       Role: !GetAtt AWSHealthCheckingLambdaIAMRole.Arn
       Environment:
         Variables:
-          AWS_DEFAULT_REGION: !Ref AWSDEFAULTREGION
+          DEFAULT_REGION: !Ref DEFAULTREGION
           CONFIG_FILE: !Ref CONFIGFILE
           BUCKET: !Ref BUCKET
       Events:
