@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 
 public class Lambda implements RequestStreamHandler {
     private static final Logger LOGGER = LogManager.getLogger(Lambda.class);
-    private static final String REGION = System.getenv("DEFAULT_REGION");
+    private static final String REGION = System.getenv("AWS_DEFAULT_REGION");
     private static final String BUCKET = System.getenv("BUCKET");
     private static final String PERSIST_FILE_PATH = "/tmp/";
     private static final String PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT =
