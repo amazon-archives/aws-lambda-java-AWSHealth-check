@@ -22,7 +22,6 @@
  */
 package AWSHealthCheck;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.amazonaws.services.health.AWSHealth;
@@ -65,28 +64,29 @@ public final class AWSHelper {
 
     public static class OrganizationHelper {
         private static final AWSOrganizations CLIENT = AWSOrganizationsClientBuilder.defaultClient();
-        private static final DescribeAccountRequest REQUEST = new DescribeAccountRequest();
 
         public static String getAccountName(String accountID) {
             LOGGER.debug("Querying AWS account name info");
-            REQUEST.setAccountId(accountID);
-            return CLIENT.describeAccount(REQUEST).getAccount().getName();
+            DescribeAccountRequest request = new DescribeAccountRequest();
+            request.setAccountId(accountID);
+            return CLIENT.describeAccount(request).getAccount().getName();
         }
 
         public static String getAccountEmail(String accountID) {
             LOGGER.debug("Querying AWS account email info");
-            REQUEST.setAccountId(accountID);
-            return CLIENT.describeAccount(REQUEST).getAccount().getEmail();
+            DescribeAccountRequest request = new DescribeAccountRequest();
+            request.setAccountId(accountID);
+            return CLIENT.describeAccount(request).getAccount().getEmail();
         }
     }
 
     public static class STSHelper {
         private static final AWSSecurityTokenService CLIENT = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        private static final GetCallerIdentityRequest REQUEST = new GetCallerIdentityRequest();
 
         public static String getAccountID() {
             LOGGER.debug("Querying AWS accountID");
-            return CLIENT.getCallerIdentity(REQUEST).getAccount();
+            GetCallerIdentityRequest request = new GetCallerIdentityRequest();
+            return CLIENT.getCallerIdentity(request).getAccount();
         }
     }
 
@@ -307,10 +307,6 @@ public final class AWSHelper {
 
     public static class AWSHealthHelper {
         private static final AWSHealth CLIENT = AWSHealthClientBuilder.defaultClient();
-        private static final DescribeEventsRequest REQUEST = new DescribeEventsRequest();
-        private static final DescribeEventDetailsRequest REQUEST_DETAIL = new DescribeEventDetailsRequest();
-        private static final DescribeAffectedEntitiesRequest REQUEST_DETAIL_ENTITY =
-                                                             new DescribeAffectedEntitiesRequest();
 
         public static List<Event> describeEvents(List<String> region, List<String> category,
                                                  List<String> status, Collection<Map<String,String>> tags,
@@ -328,14 +324,15 @@ public final class AWSHelper {
             filter.setTags(tags);
             if (startTimes != null) filter.setStartTimes(startTimes);
             if (endTimes != null) filter.setEndTimes(endTimes);
-            REQUEST.setFilter(filter);
-            DescribeEventsResult response = CLIENT.describeEvents(REQUEST);
+            DescribeEventsRequest request = new DescribeEventsRequest();
+            request.setFilter(filter);
+            DescribeEventsResult response = CLIENT.describeEvents(request);
 
             result.addAll(response.getEvents());
 
             while (response.getNextToken() != null) {
-                REQUEST.setNextToken(response.getNextToken());
-                response = CLIENT.describeEvents(REQUEST);
+                request.setNextToken(response.getNextToken());
+                response = CLIENT.describeEvents(request);
                 result.addAll(response.getEvents());
             }
             return result;
@@ -344,8 +341,9 @@ public final class AWSHelper {
         public static List<EventDetails> describeEventDetails(Collection<String> eventArns) {
             List<EventDetails> result;
 
-            REQUEST_DETAIL.setEventArns(eventArns);
-            DescribeEventDetailsResult response = CLIENT.describeEventDetails(REQUEST_DETAIL);
+            DescribeEventDetailsRequest request_detail = new DescribeEventDetailsRequest();
+            request_detail.setEventArns(eventArns);
+            DescribeEventDetailsResult response = CLIENT.describeEventDetails(request_detail);
             result = response.getSuccessfulSet();
             return result;
         }
@@ -356,13 +354,13 @@ public final class AWSHelper {
             EntityFilter filter = new EntityFilter();
             filter.setEventArns(eventArns);
 
-            REQUEST_DETAIL_ENTITY.setFilter(filter);
-            DescribeAffectedEntitiesResult response = CLIENT.describeAffectedEntities(REQUEST_DETAIL_ENTITY);
+            DescribeAffectedEntitiesRequest request_detail_entity = DescribeAffectedEntitiesRequest.setFilter(filter);
+            DescribeAffectedEntitiesResult response = CLIENT.describeAffectedEntities(request_detail_entity);
             result.addAll(response.getEntities());
 
             while (response.getNextToken() != null) {
-                REQUEST_DETAIL_ENTITY.setNextToken(response.getNextToken());
-                response = CLIENT.describeAffectedEntities(REQUEST_DETAIL_ENTITY);
+                request_detail_entity.setNextToken(response.getNextToken());
+                response = CLIENT.describeAffectedEntities(request_detail_entity);
                 result.addAll(response.getEntities());
             }
             return result;
