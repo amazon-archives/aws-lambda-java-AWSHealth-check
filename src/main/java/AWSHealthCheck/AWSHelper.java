@@ -354,7 +354,8 @@ public final class AWSHelper {
             EntityFilter filter = new EntityFilter();
             filter.setEventArns(eventArns);
 
-            DescribeAffectedEntitiesRequest request_detail_entity = DescribeAffectedEntitiesRequest.setFilter(filter);
+            DescribeAffectedEntitiesRequest request_detail_entity = new DescribeAffectedEntitiesRequest();
+            request_detail_entity.setFilter(filter);
             DescribeAffectedEntitiesResult response = CLIENT.describeAffectedEntities(request_detail_entity);
             result.addAll(response.getEntities());
 
