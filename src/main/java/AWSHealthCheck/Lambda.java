@@ -62,14 +62,14 @@ public class Lambda implements RequestStreamHandler {
     private static final String BUCKET = System.getenv("BUCKET");
     private static final String PERSIST_FILE_PATH = "/tmp/";
     private static final String PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT =
-            AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
-                    + "EventsNotificationSent.ser";
+                                AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
+                                + "EventsNotificationSent.ser";
     private static final String PERSIST_HASH_RESULT =
-            AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
-                    + "AWSHealthCheckHashResult.txt";
+                                AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
+                                + "AWSHealthCheckHashResult.txt";
     private static final String PERSIST_FILE_NAME =
-            AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
-                    + "AWSHealthCheckResultEvents_%s.txt";
+                                AWSHelper.OrganizationHelper.getAccountName(AWSHelper.STSHelper.getAccountID())
+                                + "AWSHealthCheckResultEvents_%s.txt";
     private static final Integer MAX_FETCH_MONTHS_PERIOD = 3;
     private Config config;
 
@@ -116,7 +116,7 @@ public class Lambda implements RequestStreamHandler {
                 List<Event> recentlyClosedEvents = new ArrayList<>(s1);
 
                 events += getDetaildEventDescriptionWithAffectedResources(recentlyClosedEvents,
-                                                         resultEvents.size() + 1);
+                                                                          resultEvents.size() + 1);
             } catch (IOException | ClassNotFoundException e) {
                 LOGGER.error(e.getMessage());
             }
@@ -128,8 +128,8 @@ public class Lambda implements RequestStreamHandler {
             String shaHashOnFile = "";
 
             if (AWSHelper.S3Helper.doesFileExist(BUCKET, PERSIST_HASH_RESULT, REGION)) {
-                AWSHelper.S3Helper.downloadFile(BUCKET,
-                        PERSIST_FILE_PATH + PERSIST_HASH_RESULT, PERSIST_HASH_RESULT, REGION);
+                AWSHelper.S3Helper.downloadFile(BUCKET, PERSIST_FILE_PATH + PERSIST_HASH_RESULT,
+                                                PERSIST_HASH_RESULT, REGION);
                 shaHashOnFile = readFileContents(PERSIST_FILE_PATH + PERSIST_HASH_RESULT);
             }
 
@@ -144,8 +144,8 @@ public class Lambda implements RequestStreamHandler {
                 RawMessage rawMessage = prepareRawMessage(emailContent);
 
                 if (rawMessage != null) {
-                    AWSHelper.SESHelper.sendRawEmail(config.getSes_from(),
-                            config.getSes_send(), rawMessage, config.getSes_region());
+                    AWSHelper.SESHelper.sendRawEmail(config.getSes_from(), config.getSes_send(), rawMessage,
+                                                     config.getSes_region());
                     LOGGER.info(String.format("Sending email to %s\n", config.getSes_send()));
                 }
 
@@ -239,17 +239,17 @@ public class Lambda implements RequestStreamHandler {
 
             // Find relevant resources for the event and add them to eventResources list\
             List<AffectedEntity> affectedEntities = resultEventsDetailDetail.stream()
-                                    .filter(affectedEntity -> affectedEntity.getEventArn() == i.getEvent().getArn())
-                                    .collect(Collectors.toList());
+                                                    .filter(affectedEntity -> affectedEntity.getEventArn()
+                                                    .compareTo(i.getEvent().getArn()) == 0 ? true : false)
+                                                    .collect(Collectors.toList());
             row.getEventResources().addAll(affectedEntities);
 
             eventDetailWithResources.add(row);
         }
 
         // Sort to print in the most recent event order
-        Collections.sort(eventDetailWithResources,
-                         (e1,e2) -> e2.eventDetail.getEvent().getStartTime()
-                                    .compareTo(e1.eventDetail.getEvent().getStartTime()));
+        Collections.sort(eventDetailWithResources, (e1,e2) -> e2.eventDetail.getEvent().getStartTime()
+                         .compareTo(e1.eventDetail.getEvent().getStartTime()));
 
         int num = eventCounterOffset;
         StringBuilder output = new StringBuilder();
@@ -268,9 +268,11 @@ public class Lambda implements RequestStreamHandler {
             Collections.sort(methods, Comparator.comparing(Method::getName));
             for (Method m: methods) {
                 try {
-                    if (m.getName().startsWith("get") && m.getName() != "getClass" && m.getParameterTypes().length == 0) {
+                    if (m.getName().startsWith("get") && m.getName() != "getClass"
+                                                      && m.getParameterTypes().length == 0) {
                         output.append(m.getName().replace("get", "")
-                                + ": " + m.invoke(i.getEventDetail().getEvent()) + System.getProperty("line.separator"));
+                                      + ": " + m.invoke(i.getEventDetail().getEvent())
+                                      + System.getProperty("line.separator"));
                     }
                 } catch (IllegalAccessException | InvocationTargetException ex) {
                     LOGGER.error(ex.getMessage());
@@ -284,29 +286,46 @@ public class Lambda implements RequestStreamHandler {
             output.append(i.eventDetail.getEventDescription().getLatestDescription()
                           .replaceAll("(?m)^", "\t") + System.getProperty("line.separator"));
             if (i.getEventResources().size() > 0) {
-                output.append("\t\tAffected resources:" + System.getProperty("line.separator")
-                                                          + System.getProperty("line.separator"));
+                if (i.getEventResources().get(0).getEntityArn() != null && !i.getEventResources().get(0)
+                                                                             .getEntityArn().isEmpty()) {
+                    output.append("\t\tAffected resources:" + System.getProperty("line.separator")
+                                                            + System.getProperty("line.separator"));
+                }
             }
             for (AffectedEntity j : i.getEventResources()) {
+                // Check if this is an actual affected entity
+                if (j.getEntityArn() == null || j.getEntityArn().isEmpty()) {
+                    continue;
+                }
                 output.append("\t\t" + "ARN: " + j.getEntityArn() + System.getProperty("line.separator"));
-                output.append("\t\t" + "URL: " + j.getEntityUrl() + System.getProperty("line.separator"));
-                output.append("\t\t" + "Value: " + j.getEntityValue() + System.getProperty("line.separator"));
-                output.append("\t\t" + "Value: " + j.getEntityValue() + System.getProperty("line.separator"));
-                output.append("\t\t" + "Status Code: " + j.getStatusCode() + System.getProperty("line.separator"));
-                output.append("\t\t" + "Last Updated Time: " + j.getLastUpdatedTime()
-                                                             + System.getProperty("line.separator"));
+                if (j.getEntityUrl() != null && !j.getEntityUrl().isEmpty()) {
+                    output.append("\t\t" + "URL: " + j.getEntityUrl() + System.getProperty("line.separator"));
+                }
+                if (j.getEntityValue() != null && !j.getEntityValue().isEmpty()) {
+                    output.append("\t\t" + "Value: " + j.getEntityValue() + System.getProperty("line.separator"));
+                }
+                if (j.getStatusCode() != null && !j.getStatusCode().isEmpty()) {
+                    output.append("\t\t" + "Status Code: " + j.getStatusCode() + System.getProperty("line.separator"));
+                }
+                if (j.getLastUpdatedTime() != null) {
+                    output.append("\t\t" + "Last Updated Time: " + j.getLastUpdatedTime()
+                            + System.getProperty("line.separator"));
+                }
 
                 Map<String, String> tags = j.getTags();
-                List<Map.Entry<String, String>> sortedTags = tags.entrySet().stream()
-                                                .sorted(Comparator.comparing((Map.Entry<String,String> e) -> e.getKey())
-                                                        .thenComparing(Map.Entry::getValue))
-                                                .collect(Collectors.toList());
-                if (sortedTags.size() > 0) {
-                    output.append("\t\t" + "Tags: " + System.getProperty("line.separator"));
-                }
-                for (Map.Entry<String, String> k : sortedTags) {
-                    output.append("\t\t\t" + "Key: " + k.getKey() + "\tValue: " + k.getValue()
-                                  +  System.getProperty("line.separator"));
+                if (tags != null) {
+                    List<Map.Entry<String, String>> sortedTags = tags.entrySet().stream()
+                            .filter((Map.Entry<String,String> e) -> e.getValue() == null)
+                            .sorted(Comparator.comparing((Map.Entry<String,String> e) -> e.getKey())
+                                    .thenComparing(Map.Entry::getValue))
+                            .collect(Collectors.toList());
+                    if (sortedTags.size() > 0) {
+                        output.append("\t\t" + "Tags: " + System.getProperty("line.separator"));
+                    }
+                    for (Map.Entry<String, String> k : sortedTags) {
+                        output.append("\t\t\t" + "Key: " + k.getKey() + "\tValue: " + k.getValue()
+                                      +  System.getProperty("line.separator"));
+                    }
                 }
             }
             output.append(System.getProperty("line.separator"));
