@@ -180,6 +180,7 @@ public class Lambda implements RequestStreamHandler {
         InputStream inputStream = this.getClass().getResourceAsStream(configPath);
 
         Config config = yaml.load(inputStream);
+        config.getRegions().add("global"); //Add 'global' region (ex. Global services such as IAM, Route53)
         return config;
     }
 
