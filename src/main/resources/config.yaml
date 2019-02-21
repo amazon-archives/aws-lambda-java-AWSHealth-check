@@ -2,6 +2,8 @@
 # Refer to https://docs.aws.amazon.com/health/latest/APIReference/API_EventFilter.html for limitations of filter
 # Regions to check for the AWSHealth API data (cannot exceed 10)
 regions:
+  # "global(Region)" is for "global services" not tied to specific Regions; ex.: IAM, Route53, MarketPlace
+  - "global"
   - "ap-northeast-1"
   - "ap-northeast-2"
 #  - "ap-northeast-3"
