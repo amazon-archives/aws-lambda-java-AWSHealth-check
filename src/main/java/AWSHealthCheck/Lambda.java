@@ -180,7 +180,6 @@ public class Lambda implements RequestStreamHandler {
         InputStream inputStream = this.getClass().getResourceAsStream(configPath);
 
         Config config = yaml.load(inputStream);
-        config.getRegions().add("global"); //Add 'global' region (ex. Global services such as IAM, Route53)
         return config;
     }
 
@@ -362,12 +361,15 @@ public class Lambda implements RequestStreamHandler {
     private List<Event> loadEvents() throws IOException, ClassNotFoundException {
         List<Event> list = null;
 
-        AWSHelper.S3Helper.downloadFile(BUCKET, PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT,
-                PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT, REGION);
+        if (AWSHelper.S3Helper.doesFileExist(BUCKET, PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT, REGION)) {
+            AWSHelper.S3Helper.downloadFile(BUCKET, PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT,
+                                            PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT, REGION);
+        }
+
         File f = new File(PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT);
         if (f.exists()) {
             ObjectInputStream ois = new ObjectInputStream(
-                    new FileInputStream(PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT));
+                                    new FileInputStream(PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT));
             list = (List<Event>) ois.readObject(); // cast is needed.
             ois.close();
         }
