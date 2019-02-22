@@ -104,16 +104,21 @@ public class Lambda implements RequestStreamHandler {
         if (!config.getStatus().contains("closed")) {
             try {
                 List<Event> pastEvent = loadEvents();
-                Set<Event> s1;
+                Set<String> s1;
                 if (pastEvent != null) {
-                    s1 = new HashSet<>(pastEvent);
+                    s1 = new HashSet<>(pastEvent.stream().map(Event::getArn).collect(Collectors.toList()));
                 } else {
                     s1 = new HashSet<>();
                 }
-                Set<Event> s2 = new HashSet<>(resultEvents);
-
+                Set<String> s2;
+                if (resultEvents != null) {
+                    s2 = new HashSet<>(resultEvents.stream().map(Event::getArn).collect(Collectors.toList()));
+                }
+                else {
+                    s2 = new HashSet<>();
+                }
                 s1.removeAll(s2); // List of events that was closed since the last notification
-                List<Event> recentlyClosedEvents = new ArrayList<>(s1);
+                List<String> recentlyClosedEvents = new ArrayList<>(s1);
 
                 events += getDetaildEventDescriptionWithAffectedResources(recentlyClosedEvents,
                                                                           resultEvents.size() + 1);
@@ -150,6 +155,8 @@ public class Lambda implements RequestStreamHandler {
                 }
 
                 LOGGER.info(emailContent);
+            } else {
+                LOGGER.info("No new AWS Health events found since the last notification.");
             }
         } else {
             LOGGER.info("No new AWS Health events found since the last notification.");
@@ -204,13 +211,18 @@ public class Lambda implements RequestStreamHandler {
                     config.getStatus(), config.getTags(), null, null));
         }
 
-        return getDetaildEventDescriptionWithAffectedResources(resultEvents, 1);
+        List<String> eventArns;
+        if (resultEvents.size() > 0) {
+            eventArns = resultEvents.stream().map(Event::getArn).collect(Collectors.toList());
+        } else {
+            eventArns = new ArrayList<>();
+        }
+
+        return getDetaildEventDescriptionWithAffectedResources(eventArns, 1);
     }
 
-    private String getDetaildEventDescriptionWithAffectedResources(List<Event> resultEvents, Integer eventCounterOffset) {
-        if (resultEvents.size() == 0) return "";
-
-        List<String> eventArns  = resultEvents.stream().map(Event::getArn).collect(Collectors.toList());
+    private String getDetaildEventDescriptionWithAffectedResources(List<String> eventArns, Integer eventCounterOffset) {
+        if (eventArns.size() == 0) return "";
 
         /*
          * Divide the eventArns into chunks of 5 (due to maximum length factor) since DescribeEventDetails only takes
