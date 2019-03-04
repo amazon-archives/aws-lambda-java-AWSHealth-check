@@ -194,15 +194,31 @@ public final class AWSHelper {
             List<String> deletedKeys = new ArrayList<>();
 
             try {
-                DeleteObjectsRequest request = new DeleteObjectsRequest(bucket);
-                List<DeleteObjectsRequest.KeyVersion> keys2 = new ArrayList<>();
-                for (String i: keys) {
-                    keys2.add(new DeleteObjectsRequest.KeyVersion(i));
+                /*
+                 * Divide the list of keys to delete into 500 (instead of 1000, to be safe) chunks due to
+                 * S3 java sdk issue:
+                 * "Attempting to delete more than 1000 keys from S3 gives confusing MalformedXML",
+                 * https://github.com/aws/aws-sdk-java/issues/1293
+                 */
+                int chunkSize = 500;
+                List<List<String>> keysList = new ArrayList<>();
+                for (int i=0; i < keys.size(); i += chunkSize) {
+                    int end = Math.min(keys.size(), i + chunkSize);
+                    keysList.add(keys.subList(i, end));
                 }
-                request.setKeys(keys2);
-                DeleteObjectsResult result = client.deleteObjects(request);
-                for (DeleteObjectsResult.DeletedObject i: result.getDeletedObjects()) {
-                    deletedKeys.add(i.getKey());
+
+                for (List<String> i : keysList) {
+                    DeleteObjectsRequest request = new DeleteObjectsRequest(bucket);
+                    List<DeleteObjectsRequest.KeyVersion> keys2 = new ArrayList<>();
+                    for (String j: i) {
+                        keys2.add(new DeleteObjectsRequest.KeyVersion(j));
+                    }
+                    request.setKeys(keys2);
+                    DeleteObjectsResult result = client.deleteObjects(request);
+
+                    for (DeleteObjectsResult.DeletedObject k: result.getDeletedObjects()) {
+                        deletedKeys.add(k.getKey());
+                    }
                 }
             } catch (AmazonS3Exception e) {
                 LOGGER.error(e.getMessage());
