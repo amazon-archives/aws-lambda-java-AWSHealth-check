@@ -120,9 +120,6 @@ public class Lambda implements RequestStreamHandler {
                 s1.removeAll(s2); // List of events that was closed since the last notification
                 List<String> recentlyClosedEvents = new ArrayList<>(s1);
 
-                // Remove the closed Event since the last notification for properly persisting 'pending open events'
-                resultEvents.removeIf(event -> s1.contains(event.getArn()));
-
                 events += getDetaildEventDescriptionWithAffectedResources(recentlyClosedEvents,
                                                                           resultEvents.size() + 1);
             } catch (IOException | ClassNotFoundException e) {
@@ -363,7 +360,15 @@ public class Lambda implements RequestStreamHandler {
     }
 
     private void persistEvents(List<Event> resultEvents) throws IOException {
-        if (resultEvents.size() == 0) return;
+        // Clear existing Event list that had notifications sent
+        if (resultEvents.size() == 0) {
+            if (AWSHelper.S3Helper.doesFileExist(BUCKET, PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT, REGION)) {
+                List<String> key = new ArrayList<>();
+                key.add(PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT);
+                AWSHelper.S3Helper.deleteFiles(BUCKET, REGION, key);
+            }
+            return;
+        }
 
         ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT));
