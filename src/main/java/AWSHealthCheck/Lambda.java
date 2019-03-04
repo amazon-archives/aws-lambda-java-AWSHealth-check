@@ -120,6 +120,9 @@ public class Lambda implements RequestStreamHandler {
                 s1.removeAll(s2); // List of events that was closed since the last notification
                 List<String> recentlyClosedEvents = new ArrayList<>(s1);
 
+                // Remove the closed Event since the last notification for properly persisting 'pending open events'
+                resultEvents.removeIf(event -> s1.contains(event));
+
                 events += getDetaildEventDescriptionWithAffectedResources(recentlyClosedEvents,
                                                                           resultEvents.size() + 1);
             } catch (IOException | ClassNotFoundException e) {
@@ -205,10 +208,10 @@ public class Lambda implements RequestStreamHandler {
             startTimes.add(startTime);
 
             resultEvents.addAll(AWSHelper.AWSHealthHelper.describeEvents(config.getRegions(), config.getCategory(),
-                    config.getStatus(), config.getTags(), startTimes, null));
+                                config.getStatus(), config.getTags(), startTimes, null));
         } else {
             resultEvents.addAll(AWSHelper.AWSHealthHelper.describeEvents(config.getRegions(), config.getCategory(),
-                    config.getStatus(), config.getTags(), null, null));
+                                config.getStatus(), config.getTags(), null, null));
         }
 
         List<String> eventArns;
