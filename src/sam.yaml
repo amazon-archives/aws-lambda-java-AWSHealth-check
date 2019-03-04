@@ -57,7 +57,7 @@ Resources:
                     - ses:SendEmail
                     - ses:SendRawEmail
                   Resource: "*"
-                - #Policy to allow reading and storing S3 file
+                - #Policy to allow reading, storing, and deleting S3 file
                   Effect: Allow
                   Action:
                     - s3:GetObject
@@ -65,8 +65,9 @@ Resources:
                     - s3:PutObject
                     - s3:PutObjectAcl
                     - s3:ListBucket
+                    - s3:DeleteObject
                   Resource: !Sub arn:aws:s3:::${BUCKET}/*
-                - #Policy to allow reading and storing S3 file
+                - #Policy to allow reading, storing, and deleting S3 file
                   Effect: Allow
                   Action:
                     - s3:GetObject
@@ -74,6 +75,7 @@ Resources:
                     - s3:PutObject
                     - s3:PutObjectAcl
                     - s3:ListBucket
+                    - s3:DeleteObject
                   Resource: !Sub arn:aws:s3:::${BUCKET}
                 - #Policy to allow CloudWatch
                   Effect: "Allow"
