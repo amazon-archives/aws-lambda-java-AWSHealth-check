@@ -121,7 +121,7 @@ public class Lambda implements RequestStreamHandler {
                 List<String> recentlyClosedEvents = new ArrayList<>(s1);
 
                 // Remove the closed Event since the last notification for properly persisting 'pending open events'
-                resultEvents.removeIf(event -> s1.contains(event));
+                resultEvents.removeIf(event -> s1.contains(event.getArn()));
 
                 events += getDetaildEventDescriptionWithAffectedResources(recentlyClosedEvents,
                                                                           resultEvents.size() + 1);
