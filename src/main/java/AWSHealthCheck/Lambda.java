@@ -360,16 +360,6 @@ public class Lambda implements RequestStreamHandler {
     }
 
     private void persistEvents(List<Event> resultEvents) throws IOException {
-        // Clear existing Event list that had notifications sent
-        if (resultEvents.size() == 0) {
-            if (AWSHelper.S3Helper.doesFileExist(BUCKET, PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT, REGION)) {
-                List<String> key = new ArrayList<>();
-                key.add(PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT);
-                AWSHelper.S3Helper.deleteFiles(BUCKET, REGION, key);
-            }
-            return;
-        }
-
         ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(PERSIST_FILE_PATH+PERSIST_EVENTS_WITH_NOTIFICATIONS_SENT));
         oos.writeObject(resultEvents);
